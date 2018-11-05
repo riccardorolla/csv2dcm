@@ -6,7 +6,7 @@ Prerequisites
 
 Configure
 csv2dcm.properties
-- change svfile property
+- change csvfile property
 
 Run
 powershell .\csv2dcm.ps1
