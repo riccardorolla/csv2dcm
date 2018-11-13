@@ -6,6 +6,7 @@ $templatefile = ($PSScriptRoot +"\template.dotx")
 $outdir = ($PSScriptRoot +"\out\")
 $studies = Import-CSV $conf.csvfile -Delimiter ";"
 $json2docx = ($PSScriptRoot +"\bin\json2docx.exe")
+$magick = ($PSScriptRoot +"\bin\magick.exe")
 if (!(Test-Path $dirtmp))
 	{
 		New-Item -ItemType directory -Path $dirtmp
@@ -24,7 +25,8 @@ foreach ($study in $studies) {
 	ConvertTo-Json -InputObject $study | Out-File -filepath ($fileroot + ".json") -Encoding ascii
 	#Write-Host ("C:\workspace\json2docx\bin\json2docx -t " + $templatefile  + " -j " + ($fileroot + ".json") +" -d " + ($fileroot + ".docx") + " -e png")
 	&$json2docx  -t $templatefile -j ($fileroot + ".json") -d ($fileroot + ".docx") -e png
-	ConvertTO-Dicom ($fileroot + ".png") ($fileroot + ".dcm")
+	&$magick convert -channel RGB ($fileroot + ".png") -negate  ($fileroot + ".neg.png")
+	ConvertTO-Dicom ($fileroot + ".neg.png") ($fileroot + ".dcm")
 	import-dicom  ($fileroot + ".dcm") | 
 	edit-dicom -Tag "0010,0020" -Value $study.patientId |
 	edit-dicom -Tag "0010,0010"  -Value ($study.lastName +"^" + $study.firstName)|
@@ -36,7 +38,7 @@ foreach ($study in $studies) {
 	edit-dicom -Tag "0008,0020" -Value (get-Date  $studyDate -Format 'yyyyMMdd')  |
 	edit-dicom -Tag "0020,0010" -Value $study.AccessionNumber |
 	edit-dicom -Tag "0020,000D" -Value $study.studyInstanceUID  |
-	edit-dicom  -Tag "0020,000E" -Value ($study.studyInstanceUID + ".1.0.1")  |
+	edit-dicom  -Tag "0020,000E" -Value ($study.studyInstanceUID + ".1.0.1") |
 	edit-dicom  -Tag "0008,0018" -Value ($study.studyInstanceUID + ".1.0.2") |
 	save-dicom -FileName ($outdir+$study.studyInstanceUID +".dcm")
 }
